@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PAI — Trial</title>
+<style>
+:root{color-scheme:dark;font:15px/1.5 system-ui,sans-serif;background:#10131c;color:#f1f1f8;--panel:#191d28;--line:#303548;--accent:#a393ff;--muted:#a5a9b8}
+*{box-sizing:border-box}body{margin:0}button,input,textarea{font:inherit}button{cursor:pointer;color:inherit}
+.app{min-height:100dvh;display:grid;grid-template-columns:230px 1fr}
+aside{padding:20px 14px;background:#141721;border-right:1px solid var(--line)}
+.brand{font-weight:800;font-size:21px;margin:0 8px 22px}.brand b{color:var(--accent)}
+nav{display:grid;gap:8px}nav button,.new{padding:11px;text-align:left;background:transparent;border:1px solid transparent;border-radius:10px}
+nav button:hover,.new:hover{background:var(--panel);border-color:var(--line)}
+main{min-width:0;display:flex;flex-direction:column;height:100dvh}
+header{height:58px;padding:16px 22px;border-bottom:1px solid var(--line);font-weight:650}
+.view{display:none;flex:1;overflow:auto;padding:24px}.view.active{display:flex;flex-direction:column}
+.center{width:min(720px,100%);margin:auto}.muted,small{color:var(--muted)}h1{font-size:30px;letter-spacing:-.04em}
+#messages{flex:1;overflow:auto;width:min(760px,100%);margin:24px auto 12px;padding:0 18px}
+.msg{padding:12px 16px;margin:12px 0;max-width:85%;white-space:pre-wrap;border-radius:15px;background:#202432}
+.msg.user{margin-left:auto;background:#30294d}
+form.composer{display:flex;gap:9px;width:min(760px,calc(100% - 28px));margin:0 auto 16px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:15px}
+textarea,input{min-width:0;padding:12px;color:inherit;background:#11141d;border:1px solid var(--line);border-radius:10px}
+.composer textarea{flex:1;resize:vertical;border:0;background:transparent}
+button.primary{padding:10px 16px;border:0;border-radius:10px;background:var(--accent);color:#171328;font-weight:700}
+.row{display:flex;gap:9px;margin:18px 0}.row input{flex:1}
+.card{padding:15px;margin:10px 0;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.art{aspect-ratio:1;display:grid;place-items:center;text-align:center;padding:20px;border-radius:12px;background:radial-gradient(circle at 30% 25%,#f3beff,#846de8 35%,#252744 75%)}
+.badge{color:#d7ccff;font-size:12px}
+@media(max-width:650px){.app{grid-template-columns:1fr}aside{padding:10px;border:0;border-bottom:1px solid var(--line)}.brand{margin:0 8px 8px}nav{grid-template-columns:repeat(3,1fr)}nav button{text-align:center;padding:8px}.view{padding:16px}h1{font-size:25px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><b>✦</b> PAI <span class="badge">TRIAL</span></div>
+    <nav>
+      <button onclick="show('chat')">💬 Chat</button>
+      <button onclick="show('memory')">◇ Memory</button>
+      <button onclick="show('images')">▧ Images</button>
+    </nav>
+  </aside>
+
+  <main>
+    <header id="title">PAI Trial · Demo replies</header>
+
+    <section id="chat" class="view active">
+      <div id="messages"></div>
+      <form id="chatForm" class="composer">
+        <textarea id="prompt" rows="1" placeholder="Ask PAI something…" required></textarea>
+        <button class="primary">Send</button>
+      </form>
+    </section>
+
+    <section id="memory" class="view">
+      <div class="center">
+        <h1>Memory</h1>
+        <p class="muted">Add a note and it will stay in this browser for your demo.</p>
+        <form id="memoryForm" class="row">
+          <input id="memoryText" placeholder="For example: I like short answers" required>
+          <button class="primary">Save</button>
+        </form>
+        <div id="memoryList"></div>
+      </div>
+    </section>
+
+    <section id="images" class="view">
+      <div class="center">
+        <h1>Image studio</h1>
+        <p class="muted">Try the demo image screen. These are preview cards, not generated images.</p>
+        <form id="imageForm" class="row">
+          <input id="imagePrompt" placeholder="Describe an image…" required>
+          <button class="primary">Preview</button>
+        </form>
+        <div id="gallery" class="gallery"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const views = ["chat","memory","images"];
+
+function show(name) {
+  views.forEach(v => $("#"+v).classList.toggle("active",v===name));
+  $("#title").textContent = "PAI Trial · " + name[0].toUpperCase()+name.slice(1);
+}
+function addMessage(role,text) {
+  const el=document.createElement("div");
+  el.className="msg "+role;
+  el.textContent=text;
+  $("#messages").append(el);
+  el.scrollIntoView({behavior:"smooth"});
+}
+function replyTo(text) {
+  const t=text.toLowerCase();
+  if(t.includes("hello")||t.includes("hi")) return "Hi! I’m PAI. What would you like to explore?";
+  if(t.includes("idea")) return "Here are a few starting points: make a study planner, a personal budget tracker, or a small app that organizes your daily tasks.";
+  if(t.includes("explain")) return "Tell me the topic and I’ll give you a simple explanation. This trial uses sample replies, so it won’t understand every question like a real AI.";
+  return "Thanks for trying PAI! This is a demo reply. Connect an AI backend to get real answers.";
+}
+$("#chatForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const text=$("#prompt").value.trim();
+  if(!text)return;
+  addMessage("user",text);
+  $("#prompt").value="";
+  setTimeout(()=>addMessage("assistant",replyTo(text)),350);
+});
+$("#memoryForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const text=$("#memoryText").value.trim();
+  if(!text)return;
+  const items=JSON.parse(localStorage.paiTrialMemory||"[]");
+  items.push(text);
+  localStorage.paiTrialMemory=JSON.stringify(items);
+  $("#memoryText").value="";
+  renderMemory();
+});
+function renderMemory(){
+  const box=$("#memoryList");
+  box.replaceChildren();
+  JSON.parse(localStorage.paiTrialMemory||"[]").forEach((text,i)=>{
+    const card=document.createElement("div");
+    card.className="card";
+    card.textContent=text+" ";
+    const del=document.createElement("button");
+    del.textContent="Remove";
+    del.onclick=()=>{
+      const items=JSON.parse(localStorage.paiTrialMemory||"[]");
+      items.splice(i,1);
+      localStorage.paiTrialMemory=JSON.stringify(items);
+      renderMemory();
+    };
+    card.append(del);
+    box.append(card);
+  });
+}
+$("#imageForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const prompt=$("#imagePrompt").value.trim();
+  if(!prompt)return;
+  const card=document.createElement("div");
+  card.className="art";
+  const caption=document.createElement("strong");
+  caption.textContent=prompt;
+  card.append(caption);
+  $("#gallery").prepend(card);
+  $("#imagePrompt").value="";
+});
+addMessage("assistant","Welcome to PAI Trial! Ask me something to see how the chat looks.");
+renderMemory();
+</script>
+</body>
+</html>
